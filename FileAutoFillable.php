@@ -27,13 +27,22 @@ trait FileAutoFillable {
             $magicKey = $this->magicKey ?? $this->defaultMagicKey;
             $storeFunction = $this->storeFunction ?? $this->defaultStoreFunction;
             $autoFillFolder = $this->autoFillFolder ?? $this->defaultAutoFillFolder;
+            
+            /**
+             * To specify what folder each fields should go
+             * 'key' => 'path'
+             */
+            $individualFolders = $this->individualFolders ?? [];
 
             foreach ($this->all() as $key => $value) {
                 if ($value instanceof UploadedFile && (substr($key, - strlen($magicKey)) == $this->magicKey)) {
+                    $actualKey = str_replace($magicKey, '', $key); // get the actual data key
+                    $folder = $individualFolders[$actualKey] ?? $this->autoFillFolder;
+
                     $filename = $this->generateAutoFilename(30) . '.' . $value->extension();
-                    $uploadedFilename = $value->{$storeFunction}($autoFillFolder, $filename);
+                    $uploadedFilename = $value->{$storeFunction}($folder, $filename);
      
-                    $this->merge([str_replace($magicKey, '', $key) => $uploadedFilename]);
+                    $this->merge([$actualKey => $uploadedFilename]);
                 }
             }
         });
